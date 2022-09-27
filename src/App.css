@@ -1,11 +1,13 @@
 .spacer-1 {
     height: 10px;
 }
+
 .hidden {
     display: none;
 }
+
 html {
-    min-height: 100%; /* Look, it's not fixed anymore! */
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -27,10 +29,15 @@ body {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    background-color: lightgray;
 }
 
 #sign-in {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+}
+
+.card, .btn {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
 }

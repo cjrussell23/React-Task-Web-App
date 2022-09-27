@@ -2,7 +2,6 @@ import React from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import Habits from "./Habits";
-import './background.css';
 
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/firestore';
@@ -28,21 +27,8 @@ function App() {
 	const [user] = useAuthState(auth);
 	return (
 		<div id="main-content">
-			<div className="area" >
-				<ul className="circles">
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-					<li></li>
-				</ul>
-			</div >
 			{user ? <Habits auth={auth} firestore={firestore} /> : <SignIn />}
+			<div id="bg"></div>
 		</div>
 	);
 }

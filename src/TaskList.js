@@ -3,13 +3,17 @@ import TodoList from './TodoList';
 import AddTodo from './AddTodo';
 import { v4 as uuidv4 } from 'uuid';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
+import firebase from 'firebase/compat/app';
 
 export default function TaskList(props) {
-    const { listName, firestore, auth } = props;
+    const { listName, firestore, auth, deleteList, id, color } = props;
     const [editing, setEditing] = useState(false);
     const todoNameRef = useRef();
     const tasksRef = firestore.collection('tasks');
-    const query = tasksRef.where('uid', '==', auth.currentUser.uid).where('listName', '==', listName);
+    var query = tasksRef.where('uid', '==', auth.currentUser.uid).where('listName', '==', listName);
+    // console.log('first query', useCollectionData(query, { idField: 'id' }));
+    // query = query.orderBy('createdAt');
+    // console.log('second query', useCollectionData(query, { idField: 'id' }));
     const [tasks] = useCollectionData(query, { idField: 'id' });
     const [todos, setTodos] = useState([]);
 
@@ -17,9 +21,9 @@ export default function TaskList(props) {
         if (tasks) {
             setTodos(tasks);
         }
-    }, [tasks]);
+    }, [tasks], query);
 
-    const toggleEditing= () => {
+    const toggleEditing = () => {
         setEditing(!editing);
     }
 
@@ -28,12 +32,12 @@ export default function TaskList(props) {
         tasksRef.doc(id).update({
             complete: !complete,
         })
-        .then(() => {
-            console.log("Document successfully written!");
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
-        });
+            .then(() => {
+                console.log("Document successfully written!");
+            })
+            .catch((error) => {
+                console.error("Error writing document: ", error);
+            });
     }
 
     function resetTodos() {
@@ -51,12 +55,12 @@ export default function TaskList(props) {
         tasksRef.doc(id).update({
             name: newName,
         })
-        .then(() => {
-            console.log("Document successfully written!");
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
-        });
+            .then(() => {
+                console.log("Document successfully written!");
+            })
+            .catch((error) => {
+                console.error("Error writing document: ", error);
+            });
     }
 
     function handleAddTodo() {
@@ -67,14 +71,15 @@ export default function TaskList(props) {
             name: name,
             complete: false,
             listName: listName,
-            uid: auth.currentUser.uid
+            uid: auth.currentUser.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         })
-        .then(() => {
-            console.log("Document successfully written!");
-        })
-        .catch((error) => {
-            console.error("Error writing document: ", error);
-        });
+            .then(() => {
+                console.log("Document successfully written!");
+            })
+            .catch((error) => {
+                console.error("Error writing document: ", error);
+            });
         todoNameRef.current.value = null;
     }
 
@@ -87,13 +92,17 @@ export default function TaskList(props) {
         });
     }
 
-    function handleDeleteAll() {
-        console.log(`Deleting all todos`);
+    function handleDeleteAll(){
         tasksRef.where('uid', '==', auth.currentUser.uid).where('listName', '==', listName).get().then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
                 doc.ref.delete();
             });
         });
+    }
+
+    function handleDeleteList(){
+        console.log(`Deleting list with id: ${id}`);
+        deleteList(id);
     }
 
     var percentComplete = (Math.round(todos.filter(todo => todo.complete).length / todos.length * 100));
@@ -104,53 +113,60 @@ export default function TaskList(props) {
 
     if (percentComplete === 100) {
         progressStyle = "bg-success"
-    } 
+    }
     else if (percentComplete >= 75) {
         progressStyle = "bg-primary"
-    } 
+    }
     else if (percentComplete >= 50) {
         progressStyle = "bg-info"
     }
-    else if (percentComplete >= 25){
+    else if (percentComplete >= 25) {
         progressStyle = "bg-warning"
     }
     else {
         progressStyle = "bg-danger"
     }
 
+    const headerStyle = {
+        background: color,
+    };
+
     return (
-        <div className="card my-3 w-100 mx-3" id={listName}>
-            <div className="card-header d-flex justify-content-between">
-                <h3>{listName}</h3>
-                <div className="d-flex">
-                    {editing ? 
-                    <div>
-                        <button className="btn btn-danger me-2 h-100" onClick={handleDeleteAll}>Delete ALL</button> 
-                        <button className="btn btn-primary h-100" onClick={resetTodos}>Reset All</button>
+        <div className="col-12 col-md-6">
+            <div className="card my-3 mx-3" id={listName}>
+                <div className="card-header d-flex justify-content-between flex-wrap" style={headerStyle}>
+                    <h3>{listName}</h3>
+                    <div className="d-flex">
+                        {editing ?
+                            <>
+                                <button className="btn btn-danger me-2 h-100" onClick={handleDeleteAll}>Delete All</button>
+                                <button className="btn btn-danger me-2 h-100" onClick={handleDeleteList}>Delete List</button>
+                                <button className="btn btn-primary h-100" onClick={resetTodos}>Reset All</button>
+                            </>
+                            : null}
+                        <button className="btn btn-secondary ms-2" onClick={toggleEditing}>
+                            {editing ? "Done" : "Edit"}
+                        </button>
                     </div>
+                </div>
+                <div className="card-body">
+                    <TodoList todos={todos} toggleTodo={toggleTodo} updateTodoName={updateTodoName} handleDeleteTodo={handleDeleteTodo} editing={editing} />
+                </div>
+                {editing ?
+                    <ul className="list-group list-group-flush trans-white">
+                        <li className="list-group-item "><AddTodo todoNameRef={todoNameRef} handleAddTodo={handleAddTodo} /></li>
+                    </ul>
                     : null}
-                    <button className="btn btn-secondary ms-2" onClick={toggleEditing}>
-                        {editing ? "Done" : "Edit"}
-                    </button>
+                <div className="card-footer d-flex">
+                    {todos.length > 0 ?
+                        <>
+                            <span>{todos.filter(todo => !todo.complete).length} tasks left</span>
+                            <div className={`progress flex-grow-1 mt-1 ms-3 border border-primary ${percentComplete === '0' ? 'bg-danger' : 'bg-white'} `}>
+                                <div className={`progress-bar progress-bar-striped progress-bar-animated ${progressStyle} `} role="progressbar" style={{ width: percentComplete + "%" }}>{percentComplete + "%"}</div>
+                            </div>
+                        </>
+                        : null}
                 </div>
-            </div>
-            <div className="card-body">
-                <TodoList todos={todos} toggleTodo={toggleTodo} updateTodoName={updateTodoName} handleDeleteTodo={handleDeleteTodo} editing={editing}/>
-            </div>
-            {editing ? 
-            <ul className="list-group list-group-flush trans-white">
-                <li className="list-group-item "><AddTodo todoNameRef={todoNameRef} handleAddTodo={handleAddTodo} /></li>
-            </ul>
-            : null }
-            <div className="card-footer d-flex">
-                {todos.length > 0 ?
-                <>
-                <span>{todos.filter(todo => !todo.complete).length} tasks left</span>
-                <div className={`progress flex-grow-1 mt-1 ms-3 border border-primary ${percentComplete === '0' ? 'bg-danger' : 'bg-white'} `}>
-                    <div className={`progress-bar progress-bar-striped progress-bar-animated ${progressStyle} `} role="progressbar" style={{ width: percentComplete + "%" }}>{percentComplete + "%"}</div>
-                </div>
-                </>
-                : null}
             </div>
         </div>
     )
