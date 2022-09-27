@@ -143,10 +143,14 @@ export default function TaskList(props) {
             </ul>
             : null }
             <div className="card-footer d-flex">
+                {todos.length > 0 ?
+                <>
                 <span>{todos.filter(todo => !todo.complete).length} tasks left</span>
                 <div className={`progress flex-grow-1 mt-1 ms-3 border border-primary ${percentComplete === '0' ? 'bg-danger' : 'bg-white'} `}>
                     <div className={`progress-bar progress-bar-striped progress-bar-animated ${progressStyle} `} role="progressbar" style={{ width: percentComplete + "%" }}>{percentComplete + "%"}</div>
                 </div>
+                </>
+                : null}
             </div>
         </div>
     )
