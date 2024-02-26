@@ -6,7 +6,7 @@
 <h3 align="center">React Task Web App</h3>
 
   <p align="center">
-    An app for tracking todos/habits built with React.
+    A web app for tracking todos/habits built with React.
     <br />
     <a href="https://github.com/cjrussell23/React-Task-Web-App"><strong>Explore the docs »</strong></a>
     <br />
